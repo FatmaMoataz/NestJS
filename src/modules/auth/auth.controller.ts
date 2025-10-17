@@ -1,6 +1,6 @@
 import { Controller, Post, Body, HttpStatus, HttpCode } from '@nestjs/common';
 import { AuthenticationService } from './auth.service';
-import { LoginBodyDto, SignupBodyDto } from './dto/signup.dto';
+import { LoginBodyDto, ResendEmailDto, SignupBodyDto } from './dto/signup.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -12,6 +12,15 @@ export class AuthController {
     body: SignupBodyDto,
   ): Promise<{ message: string }> {
     await this.authService.signup(body);
+    return { message: 'done' };
+  }
+
+  @Post('resend-confirm-email')
+  async resendConfirmEmail(
+    @Body()
+    body: ResendEmailDto,
+  ): Promise<{ message: string }> {
+    await this.authService.resendConfirmEmail(body);
     return { message: 'done' };
   }
 

@@ -21,10 +21,13 @@ export class MatchBetweenFields implements ValidatorConstraintInterface {
   }
 }
 
-export class LoginBodyDto {
+export class ResendEmailDto {
   @IsEmail()
   email: string;
-  @IsStrongPassword()
+}
+
+export class LoginBodyDto extends ResendEmailDto {
+  @IsStrongPassword({ minUppercase: 1 })
   password: string;
 }
 
