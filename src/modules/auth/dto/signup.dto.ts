@@ -9,6 +9,7 @@ import {
   ValidatorConstraintInterface,
   Validate,
   MinLength,
+  Matches,
 } from 'class-validator';
 
 @ValidatorConstraint({ name: 'match_between_fields', async: false })
@@ -24,6 +25,11 @@ export class MatchBetweenFields implements ValidatorConstraintInterface {
 export class ResendEmailDto {
   @IsEmail()
   email: string;
+}
+
+export class ConfirmEmailDto extends ResendEmailDto {
+  @Matches(/^\d{6}$/, { message: 'otp must be a 6-digit number' })
+  code: string;
 }
 
 export class LoginBodyDto extends ResendEmailDto {
