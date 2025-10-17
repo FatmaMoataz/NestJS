@@ -28,7 +28,7 @@ export class AuthenticationService {
         },
       ],
     });
-    emailEvent.emit('confirmEmail', { to: email, otp: otp.code });
+    // emailEvent.emit('confirmEmail', { to: email, otp: otp.code });
   }
   async signup(data: SignupBodyDto): Promise<string> {
     const { email, password, username } = data;
