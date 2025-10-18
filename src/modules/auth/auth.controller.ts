@@ -1,6 +1,20 @@
-import { Controller, Post, Body, HttpStatus, HttpCode, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpStatus,
+  HttpCode,
+  Patch,
+} from '@nestjs/common';
 import { AuthenticationService } from './auth.service';
-import { ConfirmEmailDto, LoginBodyDto, ResendEmailDto, SignupBodyDto } from './dto/signup.dto';
+import {
+  ConfirmEmailDto,
+  LoginBodyDto,
+  ResendEmailDto,
+  SignupBodyDto,
+} from './dto/signup.dto';
+import { LoginCredentialsResponse } from 'src/common';
+import { LoginResponse } from './entities/auth.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -35,13 +49,11 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  login(
+  async login(
     @Body()
     body: LoginBodyDto,
-  ): {
-    message: string;
-  } {
-    // const id: number = this.authService.signup(body);
-    return { message: 'done' };
+  ): Promise<LoginResponse> {
+    const credentials = await this.authService.login(body);
+    return { message: 'done', data: { credentials } };
   }
 }

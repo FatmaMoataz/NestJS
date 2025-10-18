@@ -6,7 +6,7 @@ import {
   Virtual,
 } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { GenderEnum, generateHash, ProviderEnum } from 'src/common';
+import { GenderEnum, generateHash, ProviderEnum, RoleEnum } from 'src/common';
 import { OTPDocument } from './otp.model';
 
 @Schema({
@@ -68,6 +68,9 @@ export class User {
 
   @Prop({ type: String, default: ProviderEnum.SYSTEM, enum: ProviderEnum })
   provider: ProviderEnum;
+
+  @Prop({ type: String, default: RoleEnum.user, enum: RoleEnum })
+  role: RoleEnum;
 
   @Prop({ type: String, default: GenderEnum.male, enum: GenderEnum })
   gender: GenderEnum;

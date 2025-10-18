@@ -1,6 +1,7 @@
 import { IUser } from 'src/common/interfaces';
 import {
   ConfirmEmailDto,
+  LoginBodyDto,
   ResendEmailDto,
   SignupBodyDto,
 } from './dto/signup.dto';
@@ -9,11 +10,13 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { OtpRepository, UserRepository } from 'src/DB';
+import { OtpRepository, UserDocument, UserRepository } from 'src/DB';
 import { emailEvent } from 'src/common/utils/email/email.event';
 import { OtpEnum } from 'src/common/enums/otp.enum';
 import { Types } from 'mongoose';
-import { createNumericalOtp, SecurityService } from 'src/common';
+import { createNumericalOtp, LoginCredentialsResponse, ProviderEnum, SecurityService } from 'src/common';
+import { JwtService } from '@nestjs/jwt';
+import { TokenService } from 'src/common/services/token.service';
 
 export class AuthenticationService {
   private users: IUser[] = [];
@@ -21,6 +24,8 @@ export class AuthenticationService {
     private readonly userRepository: UserRepository,
     private readonly otpRepository: OtpRepository,
     private readonly securityService: SecurityService,
+    private readonly jwtService: JwtService,
+    private readonly tokenService: TokenService,
   ) {}
   private async createConfirmOtp(userId: Types.ObjectId) {
     await this.otpRepository.create({
@@ -108,5 +113,18 @@ export class AuthenticationService {
       filter: { _id: user.otp[0]._id },
     });
     return 'Done';
+  }
+    async login(data: LoginBodyDto): Promise<LoginCredentialsResponse> {
+    const { email, password } = data;
+    const user = await this.userRepository.findOne({
+      filter: { email, confirmedAt: { $exists: true }, provider:ProviderEnum.SYSTEM },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found or not confirmed');
+    }
+   if (!(await this.securityService.compareHash(password, user.password))) {
+      throw new NotFoundException('Failed to find user with provided credentials');
+    }
+    return  await this.tokenService.loginCredentials(user as UserDocument);
   }
 }
