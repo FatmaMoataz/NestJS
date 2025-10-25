@@ -10,6 +10,6 @@ export const generateHash = async (
 export const compareHash = async (
   plaintext: string,
   hashValue: string,
-): Promise<string> => {
+): Promise<boolean> => {  
   return await compare(plaintext, hashValue);
 };

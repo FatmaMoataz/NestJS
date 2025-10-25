@@ -4,6 +4,7 @@ import { compare, hash } from 'bcrypt';
 @Injectable()
 export class SecurityService {
   constructor() {}
+  
   generateHash = async (
     plaintext: string,
     salt_round: number = parseInt(process.env.SALT as string),
@@ -14,7 +15,7 @@ export class SecurityService {
   compareHash = async (
     plaintext: string,
     hashValue: string,
-  ): Promise<string> => {
+  ): Promise<boolean> => { 
     return await compare(plaintext, hashValue);
   };
 }

@@ -13,7 +13,6 @@ import {
   ResendEmailDto,
   SignupBodyDto,
 } from './dto/signup.dto';
-import { LoginCredentialsResponse } from 'src/common';
 import { LoginResponse } from './entities/auth.entity';
 
 @Controller('auth')

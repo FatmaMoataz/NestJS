@@ -3,3 +3,4 @@ export * from './enums';
 export * from './utils';
 export * from './services';
 export * from './entities';
+export * from './middleware';

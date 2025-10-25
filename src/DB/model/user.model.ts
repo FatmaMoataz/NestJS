@@ -101,20 +101,5 @@ export type UserDocument = HydratedDocument<User>;
 export const UserModel = MongooseModule.forFeature([
   { name: User.name, schema: userSchema },
 ]);
-// export const UserModel = MongooseModule.forFeatureAsync([
-//   {
-//     name: User.name,
-//     imports:[SecurityService],
-//     useFactory: (securityService: SecurityService) => {
-//       userSchema.pre('save', async function (next) {
-//         if (this.isModified('password')) {
-//           this.password = await securityService.generateHash(this.password);
-//         }
-//         next();
-//       });
-//     },
-//     inject: [SecurityService],
-//   },
-// ]);
 
 export { userSchema };

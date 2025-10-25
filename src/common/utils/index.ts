@@ -1,4 +1,4 @@
 export * from './security';
-export * from './email';
+export * from './email/email.event';
 export * from './otp';
 export * from './objectId';
