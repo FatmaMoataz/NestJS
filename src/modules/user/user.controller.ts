@@ -1,18 +1,19 @@
 import { Controller, Get, Req, SetMetadata, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
-import { IUser, TokenEnum } from 'src/common';
+import { IUser, RoleEnum, TokenEnum } from 'src/common';
 import { UserDocument } from 'src/DB';
 import { JwtPayload } from 'jsonwebtoken';
 import { AuthenticationGuard } from 'src/common/guards/authentication/authentication.guard';
-import { Token } from 'src/common/decorators';
+import { Roles, Token } from 'src/common/decorators';
+import { AuthorizationGuard } from 'src/common/guards/authorization/authorization.guard';
 
-@UseGuards(AuthenticationGuard)
 @Controller('user')
 export class UserController {
   constructor(private readonly UserService: UserService) {}
 
   // @Token(TokenEnum.refresh)
-
+  @Roles([RoleEnum.admin])
+  @UseGuards(AuthenticationGuard , AuthorizationGuard)
   @Get()  
   profile(
     @Req()
