@@ -112,51 +112,59 @@ export class AuthenticationService {
   }
 
   async confirmEmail(data: ConfirmEmailDto): Promise<string> {
-    const { email, code } = data;
-    
-    const user = await this.userRepository.findOne({
-      filter: { email, confirmedAt: { $exists: false } },
-      options: {
-        populate: [
-          {
-            path: 'otp',
-            match: { type: OtpEnum.ConfirmEmail },
-          },
-        ],
-      },
-    });
+  const { email, code } = data;
+  
+  const user = await this.userRepository.findOne({
+    filter: { email, confirmedAt: { $exists: false } },
+  });
 
-    if (!user) {
-      throw new NotFoundException(
-        'Failed to find unconfirmed user with this email',
-      );
-    }
-
-    if (!user.otp?.length) {
-      throw new BadRequestException('No OTP found for this user');
-    }
-
-    const isOtpValid = await this.securityService.compareHash(
-      code, 
-      user.otp[0].code
+  if (!user) {
+    throw new NotFoundException(
+      'Failed to find unconfirmed user with this email',
     );
-
-    if (!isOtpValid) {
-      throw new BadRequestException('Invalid OTP code');
-    }
-
-    await this.userRepository.updateOne({
-      filter: { _id: user._id },
-      update: { confirmedAt: new Date() },
-    });
-
-
-    await this.otpRepository.deleteOne({
-      filter: { _id: user.otp[0]._id },
-    });
-
-    return 'Done';
   }
+
+  // Query OTP directly instead of using populate
+  const otpRecord = await this.otpRepository.findOne({
+    filter: { 
+      createdBy: user._id, 
+      type: OtpEnum.ConfirmEmail 
+    },
+  });
+
+  if (!otpRecord) {
+    throw new BadRequestException('No OTP found for this user');
+  }
+
+  // Check if OTP has expired
+  if (otpRecord.expiresAt < new Date()) {
+    // Auto-delete expired OTP
+    await this.otpRepository.deleteOne({
+      filter: { _id: otpRecord._id },
+    });
+    throw new BadRequestException('OTP has expired');
+  }
+
+  const isOtpValid = await this.securityService.compareHash(
+    code, 
+    otpRecord.code
+  );
+
+  if (!isOtpValid) {
+    throw new BadRequestException('Invalid OTP code');
+  }
+
+  await this.userRepository.updateOne({
+    filter: { _id: user._id },
+    update: { confirmedAt: new Date() },
+  });
+
+  await this.otpRepository.deleteOne({
+    filter: { _id: otpRecord._id },
+  });
+
+  return 'Done';
+}
 
   async login(data: LoginBodyDto): Promise<LoginCredentialsResponse> {
     const { email, password } = data;
@@ -184,4 +192,5 @@ export class AuthenticationService {
 
     return await this.tokenService.loginCredentials(user as UserDocument);
   }
+
 }

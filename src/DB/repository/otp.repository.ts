@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseRepository } from './database.repository';
-import { OTP, UserDocument as TDocument } from '../model';
+import { OTP, OTPDocument as TDocument } from '../model';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
