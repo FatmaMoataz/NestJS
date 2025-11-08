@@ -3,17 +3,14 @@ import { UserService } from './user.service';
 import { IUser, RoleEnum, TokenEnum } from 'src/common';
 import { UserDocument } from 'src/DB';
 import { JwtPayload } from 'jsonwebtoken';
-import { AuthenticationGuard } from 'src/common/guards/authentication/authentication.guard';
-import { Roles, Token } from 'src/common/decorators';
-import { AuthorizationGuard } from 'src/common/guards/authorization/authorization.guard';
+import { Auth } from 'src/common/decorators/auth.decorator';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly UserService: UserService) {}
 
   // @Token(TokenEnum.refresh)
-  @Roles([RoleEnum.admin])
-  @UseGuards(AuthenticationGuard , AuthorizationGuard)
+@Auth([RoleEnum.admin , RoleEnum.user] , TokenEnum.access)
   @Get()  
   profile(
     @Req()
