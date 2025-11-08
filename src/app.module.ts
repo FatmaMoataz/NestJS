@@ -8,6 +8,7 @@ import { CategoryModule } from './modules/category/category.module';
 import { ProductModule } from './modules/product/product.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { SharedAuthModule } from './common/modules/auth.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AppService } from './app.service';
     MongooseModule.forRoot(process.env.DB_URI!, {
       serverSelectionTimeoutMS: 30000,
     }),
+    SharedAuthModule,
     AuthModule,
     UserModule,
     CategoryModule,
