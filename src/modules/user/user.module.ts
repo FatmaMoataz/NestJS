@@ -3,19 +3,38 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { PreAuth } from 'src/common/middleware/authentication.middleware';
 import { SharedAuthModule } from 'src/common/modules/auth.module';
+import { MulterModule } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import type { Request } from 'express';
+import { randomUUID } from 'crypto';
 
 @Module({
-  imports: [SharedAuthModule],
-  controllers: [UserController],
-  providers: [
-    UserService,
+  imports: [
+    SharedAuthModule,
+//     MulterModule.register({
+//       storage: diskStorage({
+//         destination(
+//           req: Request,
+//           file: Express.Multer.File,
+//           callback: Function,
+//         ) {
+//           callback(null, './uploads');
+//         },
+//       filename( req: Request,
+//           file: Express.Multer.File,
+//           callback: Function,) {
+//             const fileName = randomUUID() + "_" + Date.now() + "_" + file.originalname
+// callback(null, fileName);
+//       }
+//       }),
+//     }),
   ],
+  controllers: [UserController],
+  providers: [UserService],
   exports: [],
 })
 export class UserModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(PreAuth)
-      .forRoutes(UserController);
+    consumer.apply(PreAuth).forRoutes(UserController);
   }
 }
