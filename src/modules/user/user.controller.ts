@@ -1,22 +1,23 @@
-import { Controller, Get, Req, SetMetadata, UseGuards } from '@nestjs/common';
+import { Controller, Get, Headers, UseInterceptors } from '@nestjs/common';
 import { UserService } from './user.service';
 import { IUser, RoleEnum, TokenEnum } from 'src/common';
-import type{ UserDocument } from 'src/DB';
+import type { UserDocument } from 'src/DB';
 import { Auth } from 'src/common/decorators/auth.decorator';
 import { User } from 'src/common/decorators';
+import { PreferredLanguageInterceptor } from 'src/common/interceptors';
+import { delay, Observable, of } from 'rxjs';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly UserService: UserService) {}
 
-@Auth([RoleEnum.admin , RoleEnum.user] , TokenEnum.access)
-  @Get()  
+  @UseInterceptors(PreferredLanguageInterceptor)
+  @Auth([RoleEnum.admin, RoleEnum.user], TokenEnum.access)
+  @Get()
   profile(
-  @User() user: UserDocument
-  ): {
-    message: string;
-  } {
-    return { message: 'done' };
+    @Headers() header:any,
+    @User() user: UserDocument):Observable<any> {
+    return of([{message:'Done'}]).pipe(delay(15000));
   }
 
   @Get()
