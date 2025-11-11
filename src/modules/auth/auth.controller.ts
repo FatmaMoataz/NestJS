@@ -14,6 +14,7 @@ import {
   SignupBodyDto,
 } from './dto/signup.dto';
 import { LoginResponse } from './entities/auth.entity';
+import { IResponse, successResponse } from 'src/common';
 
 @Controller('auth')
 export class AuthController {
@@ -23,27 +24,27 @@ export class AuthController {
   async signup(
     @Body()
     body: SignupBodyDto,
-  ): Promise<{ message: string }> {
+  ): Promise<IResponse> {
     await this.authService.signup(body);
-    return { message: 'done' };
+    return successResponse();
   }
 
   @Post('resend-confirm-email')
   async resendConfirmEmail(
     @Body()
     body: ResendEmailDto,
-  ): Promise<{ message: string }> {
+  ): Promise<IResponse>{
     await this.authService.resendConfirmEmail(body);
-    return { message: 'done' };
+    return successResponse();
   }
 
   @Patch('confirm-email')
   async confirmEmail(
     @Body()
     body: ConfirmEmailDto,
-  ): Promise<{ message: string }> {
+  ): Promise<IResponse> {
     await this.authService.confirmEmail(body);
-    return { message: 'done' };
+    return successResponse();
   }
 
   @HttpCode(HttpStatus.OK)
@@ -51,8 +52,11 @@ export class AuthController {
   async login(
     @Body()
     body: LoginBodyDto,
-  ): Promise<LoginResponse> {
+  ): Promise<IResponse<LoginResponse>> {
     const credentials = await this.authService.login(body);
-    return { message: 'done', data: { credentials } };
+    return successResponse<LoginResponse>({
+      message:'Done',
+      data:{credentials}
+    });
   }
 }

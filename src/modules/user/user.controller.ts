@@ -10,7 +10,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { type IMulterFile, IUser, RoleEnum, TokenEnum } from 'src/common';
+import { type IMulterFile, IResponse, IUser, RoleEnum, successResponse, TokenEnum } from 'src/common';
 import type { UserDocument } from 'src/DB';
 import { Auth } from 'src/common/decorators/auth.decorator';
 import { User } from 'src/common/decorators';
@@ -18,10 +18,11 @@ import { PreferredLanguageInterceptor } from 'src/common/interceptors';
 import { delay, Observable, of } from 'rxjs';
 import { FileFieldsInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { cloudFileUpload, fileValidation, localFileUpload } from 'src/common/utils/multer';
+import { ProfileResponse } from '../auth/entities/user.entity';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly UserService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
   @UseInterceptors(PreferredLanguageInterceptor)
   @Auth([RoleEnum.admin, RoleEnum.user], TokenEnum.access)
@@ -53,9 +54,9 @@ export class UserController {
       }),
     )
     file: Express.Multer.File,
-  ):Promise<{message:string; data:{profile:IUser}}> {
-    const profile = await this.UserService.profileImage(file, user)
-    return { message: 'Done', data:{profile} };
+  ):Promise<IResponse<ProfileResponse>> {
+    const profile = await this.userService.profileImage(file, user)
+    return successResponse<ProfileResponse>({data:{profile}});
   }
 
     @UseInterceptors(
