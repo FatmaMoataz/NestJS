@@ -30,11 +30,11 @@ export class UserController {
     return of([{ message: 'Done' }]).pipe(delay(15000));
   }
 
-  @Get()
-  allUsers(): { message: string; data: { users: IUser[] } } {
-    const users: IUser[] = this.UserService.allUsers();
-    return { message: 'done', data: { users } };
-  }
+  // @Get()
+  // allUsers(): { message: string; data: { users: IUser[] } } {
+  //   const users: IUser[] = this.UserService.allUsers();
+  //   return { message: 'done', data: { users } };
+  // }
 
   @UseInterceptors(
     FileInterceptor(
@@ -53,9 +53,9 @@ export class UserController {
       }),
     )
     file: Express.Multer.File,
-  ) {
-    const url = await this.UserService.profileImage(file, user)
-    return { message: 'Done', data:{url} };
+  ):Promise<{message:string; data:{profile:IUser}}> {
+    const profile = await this.UserService.profileImage(file, user)
+    return { message: 'Done', data:{profile} };
   }
 
     @UseInterceptors(
