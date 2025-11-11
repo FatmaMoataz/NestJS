@@ -3,10 +3,11 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { PreAuth } from 'src/common/middleware/authentication.middleware';
 import { SharedAuthModule } from 'src/common/modules/auth.module';
-import { MulterModule } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import type { Request } from 'express';
-import { randomUUID } from 'crypto';
+// import { MulterModule } from '@nestjs/platform-express';
+// import { diskStorage } from 'multer';
+// import type { Request } from 'express';
+// import { randomUUID } from 'crypto';
+import { S3Service } from 'src/common';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { randomUUID } from 'crypto';
 //     }),
   ],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [UserService , S3Service],
   exports: [],
 })
 export class UserModule {

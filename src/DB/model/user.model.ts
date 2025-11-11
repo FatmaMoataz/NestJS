@@ -78,6 +78,9 @@ export class User {
   @Prop({ type: String, default: LanguageEnum.EN, enum: LanguageEnum })
   preferredLanguage: LanguageEnum;
 
+  @Prop({ type: String })
+  profilePicture: string;
+
   @Prop({
     required: false,
     type: Date,

@@ -9,6 +9,7 @@ import { ProductModule } from './modules/product/product.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SharedAuthModule } from './common/modules/auth.module';
+import { S3Service } from './common';
 
 @Module({
   imports: [
@@ -26,6 +27,6 @@ import { SharedAuthModule } from './common/modules/auth.module';
     ProductModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService , S3Service],
 })
 export class AppModule {}

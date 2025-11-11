@@ -44,16 +44,18 @@ export class UserController {
   )
   @Auth([RoleEnum.user], TokenEnum.access)
   @Patch('profile-image')
-  profileImage(
+  async profileImage(
+    @User() user:UserDocument,
     @UploadedFile(
       new ParseFilePipe({
         validators: [new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 })],
         fileIsRequired: true,
       }),
     )
-    file: IMulterFile,
+    file: Express.Multer.File,
   ) {
-    return { message: 'Done', file };
+    const url = await this.UserService.profileImage(file, user)
+    return { message: 'Done', data:{url} };
   }
 
     @UseInterceptors(
