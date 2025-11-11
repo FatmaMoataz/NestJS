@@ -8,6 +8,7 @@ export interface IBrand {
   slogan: string;
   image: string;
   createdBy: Types.ObjectId | IUser;
+  updatedBy?: Types.ObjectId | IUser;
   createdAt?: Date;
   updatedAt?: Date;
 }

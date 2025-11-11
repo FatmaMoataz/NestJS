@@ -5,7 +5,7 @@ import { Token } from './tokenType.decorator';
 import { AuthenticationGuard } from '../guards/authentication/authentication.guard';
 import { AuthorizationGuard } from '../guards/authorization/authorization.guard';
 
-export function Auth(roles:RoleEnum[] , type:TokenEnum) {
+export function Auth(roles:RoleEnum[] , type?:TokenEnum) {
   return applyDecorators(
   Token(type),
   Roles(roles),

@@ -21,6 +21,8 @@ export class Brand implements IBrand {
   slogan: string;
   @Prop({ type: Types.ObjectId, required: true, ref: 'User' })
   createdBy: Types.ObjectId | IUser;
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  updatedBy: Types.ObjectId | IUser;
 }
 
 export type BrandDocument = HydratedDocument<Brand>;
