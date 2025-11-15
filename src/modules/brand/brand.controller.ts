@@ -59,12 +59,19 @@ export class BrandController {
     return this.brandService.findOne(+id);
   }
 
+  @Auth(endpoint.create)
   @Patch(':brandId')
-  update(
+  async update(
     @Param() params: BrandParamsDto,
     @Body() updateBrandDto: UpdateBrandDto,
-  ) {
-    return this.brandService.update(params.brandId, updateBrandDto);
+    @User() user: UserDocument,
+  ): Promise<IResponse<BrandResponse>> {
+    const brand = await this.brandService.update(
+      params.brandId,
+      updateBrandDto,
+      user,
+    );
+    return successResponse<BrandResponse>({ data: { brand } });
   }
 
   @Delete(':id')

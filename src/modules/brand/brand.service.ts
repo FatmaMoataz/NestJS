@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { CreateBrandDto } from './dto/create-brand.dto';
-import { BrandDocument, BrandRepository, UserDocument } from 'src/DB';
+import { BrandDocument, BrandRepository, Lean, UserDocument } from 'src/DB';
 import { S3Service, successResponse } from 'src/common';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { Types } from 'mongoose';
@@ -42,8 +42,20 @@ export class BrandService {
     return `This action returns a #${id} brand`;
   }
 
-  update(brandId: Types.ObjectId, updateBrandDto: UpdateBrandDto) {
-    return `This action updates a #${brandId} brand`;
+  async update(brandId: Types.ObjectId, updateBrandDto: UpdateBrandDto , user: UserDocument):Promise<BrandDocument | Lean<BrandDocument>> {
+    if(updateBrandDto.name && (await this.brandRepository.findOne({filter:{name:updateBrandDto.name}}))) {
+throw new ConflictException('Duplicated brand name')
+    }
+    const brand = await this.brandRepository.findOneAndUpdate({
+     filter:{_id:brandId},
+     update:{...updateBrandDto , 
+      updatedBy:user._id
+     },
+    })
+    if(!brand) {
+      throw new BadRequestException("Failed to update this brand resource")
+    }
+    return brand;
   }
 
   remove(id: number) {

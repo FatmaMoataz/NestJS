@@ -5,7 +5,6 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
-import { object } from 'zod';
 
 @ValidatorConstraint({ name: 'check_fields_exist', async: false })
 export class CheckIfAnyFieldsAreApplied

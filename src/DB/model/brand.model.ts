@@ -1,9 +1,9 @@
 import { MongooseModule, Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Types, UpdateQuery } from 'mongoose';
 import slugify from 'slugify';
 import { IBrand, IUser } from 'src/common';
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, strictQuery: true })
 export class Brand implements IBrand {
   @Prop({ type: String, required: true })
   image: string;
@@ -15,7 +15,7 @@ export class Brand implements IBrand {
     maxlength: 25,
   })
   name: string;
-  @Prop({type: String, minlength: 2, maxlength: 50})
+  @Prop({ type: String, minlength: 2, maxlength: 50 })
   slug: string;
   @Prop({ type: String, required: true, minlength: 2, maxlength: 25 })
   slogan: string;
@@ -29,17 +29,42 @@ export type BrandDocument = HydratedDocument<Brand>;
 export const brandSchema = SchemaFactory.createForClass(Brand);
 brandSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-brandSchema.pre(
-  'save',
-  async function (
-    next,
-  ) {
-    if (this.isModified('name')) {
- this.slug = slugify(this.slug)
-    }
-    next();
-  },
-);
+brandSchema.pre('save', async function (next) {
+  if (this.isModified('name')) {
+    // use name to generate slug
+    this.slug = slugify(this.name);
+  }
+  next();
+});
+
+brandSchema.pre(['findOneAndUpdate', 'updateOne'], async function (next) {
+  const update = this.getUpdate() as UpdateQuery<Brand>;
+  if (update.name) {
+    this.setUpdate({
+      ...update,
+      slug: slugify(update.name),
+    });
+  }
+
+  const q = this.getQuery();
+  if (q.paranoId === false) {
+    this.setQuery({ ...q });
+  } else {
+    this.setQuery({ ...q, freezedAt: { $exists: false } });
+  }
+  next();
+});
+
+brandSchema.pre(['findOne', 'find'], async function (next) {
+
+  const q = this.getQuery();
+  if (q.paranoId === false) {
+    this.setQuery({ ...q });
+  } else {
+    this.setQuery({ ...q, freezedAt: { $exists: false } });
+  }
+  next();
+});
 
 export const BrandModel = MongooseModule.forFeature([
   { name: Brand.name, schema: brandSchema },
