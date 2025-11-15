@@ -74,6 +74,25 @@ export class BrandController {
     return successResponse<BrandResponse>({ data: { brand } });
   }
 
+  @UseInterceptors(FileInterceptor(
+    'attachment',
+    cloudFileUpload({ validation: fileValidation.image }),
+    ))
+  @Auth(endpoint.create)
+  @Patch(':brandId/attachment')
+  async updateAttachment(
+    @Param() params: BrandParamsDto,
+    @UploadedFile(ParseFilePipe) file: Express.Multer.File,
+    @User() user: UserDocument,
+  ): Promise<IResponse<BrandResponse>> {
+    const brand = await this.brandService.updateAttachment(
+      params.brandId,
+      file,
+      user,
+    );
+    return successResponse<BrandResponse>({ data: { brand } });
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.brandService.remove(+id);

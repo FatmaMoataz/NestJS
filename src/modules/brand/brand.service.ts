@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { BrandDocument, BrandRepository, Lean, UserDocument } from 'src/DB';
-import { S3Service, successResponse } from 'src/common';
+import { FolderEnum, S3Service, successResponse } from 'src/common';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { Types } from 'mongoose';
 
@@ -55,6 +55,24 @@ throw new ConflictException('Duplicated brand name')
     if(!brand) {
       throw new BadRequestException("Failed to update this brand resource")
     }
+    return brand;
+  }
+
+    async updateAttachment(brandId: Types.ObjectId, file: Express.Multer.File , user: UserDocument):Promise<BrandDocument | Lean<BrandDocument>> {
+const image = await this.s3Service.uploadFile({file, path:FolderEnum.Brand})
+    const brand = await this.brandRepository.findOneAndUpdate({
+     filter:{_id:brandId},
+     update:{image , 
+      updatedBy:user._id
+     },
+     options:{new:false}
+    })
+    if(!brand) {
+      await this.s3Service.deleteFile({Key:image})
+      throw new BadRequestException("Failed to update this brand resource")
+    }
+    await this.s3Service.deleteFile({Key:brand.image})
+    brand.image = image
     return brand;
   }
 
