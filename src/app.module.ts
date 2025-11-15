@@ -10,6 +10,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SharedAuthModule } from './common/modules/auth.module';
 import { S3Service } from './common';
+import { BrandModule } from './modules/brand/brand.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { S3Service } from './common';
     UserModule,
     CategoryModule,
     ProductModule,
+    BrandModule,
   ],
   controllers: [AppController],
   providers: [AppService , S3Service],

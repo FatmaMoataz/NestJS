@@ -9,18 +9,21 @@ import {
   UseInterceptors,
   UploadedFile,
   ParseFilePipe,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { BrandService } from './brand.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { BrandRepository, type UserDocument } from 'src/DB';
 import { IResponse, successResponse } from 'src/common';
 import { Auth, User } from 'src/common/decorators';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { cloudFileUpload, fileValidation } from 'src/common/utils/multer';
 import { BrandResponse } from './entities/brand.entity';
 import { endpoint } from './authorization.module';
-// import { UpdateBrandDto } from './dto/update-brand.dto';
+import { BrandParamsDto, UpdateBrandDto } from './dto/update-brand.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
+@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
 @Controller('brand')
 export class BrandController {
   constructor(
@@ -28,9 +31,12 @@ export class BrandController {
     private readonly brandRepository: BrandRepository,
   ) {}
 
+  // replace direct Multer options in UseInterceptors with FileInterceptor
   @UseInterceptors(
-    FileInterceptor('attachment'),
-    cloudFileUpload({ validation: fileValidation.image }),
+    FileInterceptor(
+      'file',
+      cloudFileUpload({ validation: fileValidation.image }),
+    ),
   )
   @Auth(endpoint.create)
   @Post()
@@ -38,8 +44,8 @@ export class BrandController {
     @User() user: UserDocument,
     @Body() createBrandDto: CreateBrandDto,
     @UploadedFile(ParseFilePipe) file: Express.Multer.File,
-  ):Promise<IResponse<BrandResponse>> {
-    const brand = await this.brandService.create(createBrandDto , file,user);
+  ): Promise<IResponse<BrandResponse>> {
+    const brand = await this.brandService.create(createBrandDto, file, user);
     return successResponse({ status: 201, data: { brand } });
   }
 
@@ -53,10 +59,13 @@ export class BrandController {
     return this.brandService.findOne(+id);
   }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateBrandDto: UpdateBrandDto) {
-  //   return this.brandService.update(+id, updateBrandDto);
-  // }
+  @Patch(':brandId')
+  update(
+    @Param() params: BrandParamsDto,
+    @Body() updateBrandDto: UpdateBrandDto,
+  ) {
+    return this.brandService.update(params.brandId, updateBrandDto);
+  }
 
   @Delete(':id')
   remove(@Param('id') id: string) {

@@ -37,7 +37,8 @@ export class AppController {
     const url = await this.s3Service.createGetPreSignedLink({
       Key,
       download,
-      // filename,
+      // API expects `downloadName`, not `filename`
+      downloadName: filename || Key.split('/').pop(),
     });
     return { message: 'done', data: { url } };
   }
