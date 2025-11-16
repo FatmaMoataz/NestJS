@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { BrandService } from './brand.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
-import { BrandRepository, type UserDocument } from 'src/DB';
+import { type UserDocument } from 'src/DB';
 import { IResponse, successResponse } from 'src/common';
 import { Auth, User } from 'src/common/decorators';
 import { cloudFileUpload, fileValidation } from 'src/common/utils/multer';
@@ -29,7 +29,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class BrandController {
   constructor(
     private readonly brandService: BrandService,
-    private readonly brandRepository: BrandRepository,
   ) {}
 
   // replace direct Multer options in UseInterceptors with FileInterceptor
