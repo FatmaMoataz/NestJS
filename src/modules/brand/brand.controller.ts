@@ -123,8 +123,23 @@ export class BrandController {
     return successResponse<GetAllResponse>({ data: {result} });
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.brandService.findOne(+id);
+  @Auth(endpoint.create)
+  @Get('/archive')
+  async findAllArchive(@Query() query: GetAllBrandDto):Promise<IResponse<GetAllResponse>> {
+    const result = await this.brandService.findAll(query , true);
+    return successResponse<GetAllResponse>({ data: {result} });
+  }
+
+  @Get(':brandId')
+  async findOne(@Param() params: BrandParamsDto) {
+    const brand = await this.brandService.findOne(params.brandId);
+    return successResponse<BrandResponse>({ data: { brand } });
+  }
+
+  @Auth(endpoint.create)
+  @Get(':brandId/archive')
+  async findOneArchive(@Param() params: BrandParamsDto) {
+    const brand = await this.brandService.findOne(params.brandId , true);
+    return successResponse<BrandResponse>({ data: { brand } });
   }
 }

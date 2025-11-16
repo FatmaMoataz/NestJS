@@ -42,7 +42,7 @@ export class BrandService {
     return brand;
   }
 
-  async findAll(data:GetAllBrandDto):Promise<{
+  async findAll(data:GetAllBrandDto , archive: boolean = false):Promise<{
       docsCount?:number,
       limit?: number,
       pages?: number,
@@ -58,7 +58,8 @@ export class BrandService {
             {slogan:{$regex:search , $options:'i'}},
             {slug:{$regex:search , $options:'i'}},
           ]
-        }:{})
+        }:{}),
+        ...(archive ? { paranoId:false , freezedAt: { $exists: true } } : {  }),
       },
       page,
       size
@@ -66,8 +67,18 @@ export class BrandService {
     return result[0];
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} brand`;
+  async findOne(brandId: Types.ObjectId , archive: boolean = false):Promise< BrandDocument| Lean<BrandDocument>> {
+
+    const brand = await this.brandRepository.findOne({
+      filter:{
+        _id:brandId ,
+        ...(archive ? { paranoId:false , freezedAt: { $exists: true } } : {  }),
+      },
+    });
+    if(!brand){
+      throw new NotFoundException('Brand not found');
+    }
+    return brand;
   }
 
   async update(
