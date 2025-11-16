@@ -140,7 +140,7 @@ export abstract class DatabaseRepository<TDocument> {
     filter,
   }: {
     filter: RootFilterQuery<TDocument>;
-  }): Promise<TDocument | null> {
+  }): Promise<TDocument | null | Lean<TDocument>> {
     return await this.model.findOneAndDelete(filter);
   }
 

@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { BrandDocument, BrandRepository, Lean, UserDocument } from 'src/DB';
 import { FolderEnum, S3Service, successResponse } from 'src/common';
@@ -15,21 +20,24 @@ export class BrandService {
     createBrandDto: CreateBrandDto,
     file: Express.Multer.File,
     user: UserDocument,
-  ):Promise<BrandDocument> {
+  ): Promise<BrandDocument> {
     const { name, slogan } = createBrandDto;
     const checkDuplicated = await this.brandRepository.findOne({
-      filter: { name },
+      filter: { name , paranoId: false},
     });
     if (checkDuplicated) {
       throw new ConflictException('Duplicated brand name');
     }
-    const image:string = await this.s3Service.uploadFile({file, path:`Brand`})
+    const image: string = await this.s3Service.uploadFile({
+      file,
+      path: `Brand`,
+    });
     const [brand] = await this.brandRepository.create({
-      data:[{name, slogan, image, createdBy:user._id}]
-    })
-    if(!brand) {
-      await this.s3Service.deleteFile({Key:image})
-      throw new BadRequestException("Failed to create this brand resource")
+      data: [{ name, slogan, image, createdBy: user._id }],
+    });
+    if (!brand) {
+      await this.s3Service.deleteFile({ Key: image });
+      throw new BadRequestException('Failed to create this brand resource');
     }
     return brand;
   }
@@ -42,41 +50,107 @@ export class BrandService {
     return `This action returns a #${id} brand`;
   }
 
-  async update(brandId: Types.ObjectId, updateBrandDto: UpdateBrandDto , user: UserDocument):Promise<BrandDocument | Lean<BrandDocument>> {
-    if(updateBrandDto.name && (await this.brandRepository.findOne({filter:{name:updateBrandDto.name}}))) {
-throw new ConflictException('Duplicated brand name')
+  async update(
+    brandId: Types.ObjectId,
+    updateBrandDto: UpdateBrandDto,
+    user: UserDocument,
+  ): Promise<BrandDocument | Lean<BrandDocument>> {
+    if (
+      updateBrandDto.name &&
+      (await this.brandRepository.findOne({
+        filter: { name: updateBrandDto.name },
+      }))
+    ) {
+      throw new ConflictException('Duplicated brand name');
     }
     const brand = await this.brandRepository.findOneAndUpdate({
-     filter:{_id:brandId},
-     update:{...updateBrandDto , 
-      updatedBy:user._id
-     },
-    })
-    if(!brand) {
-      throw new BadRequestException("Failed to update this brand resource")
+      filter: { _id: brandId },
+      update: { ...updateBrandDto, updatedBy: user._id },
+    });
+    if (!brand) {
+      throw new BadRequestException('Failed to update this brand resource');
     }
     return brand;
   }
 
-    async updateAttachment(brandId: Types.ObjectId, file: Express.Multer.File , user: UserDocument):Promise<BrandDocument | Lean<BrandDocument>> {
-const image = await this.s3Service.uploadFile({file, path:FolderEnum.Brand})
+  async updateAttachment(
+    brandId: Types.ObjectId,
+    file: Express.Multer.File,
+    user: UserDocument,
+  ): Promise<BrandDocument | Lean<BrandDocument>> {
+    const image = await this.s3Service.uploadFile({
+      file,
+      path: FolderEnum.Brand,
+    });
     const brand = await this.brandRepository.findOneAndUpdate({
-     filter:{_id:brandId},
-     update:{image , 
-      updatedBy:user._id
-     },
-     options:{new:false}
-    })
-    if(!brand) {
-      await this.s3Service.deleteFile({Key:image})
-      throw new BadRequestException("Failed to update this brand resource")
+      filter: { _id: brandId },
+      update: { image, updatedBy: user._id },
+      options: { new: false },
+    });
+    if (!brand) {
+      await this.s3Service.deleteFile({ Key: image });
+      throw new BadRequestException('Failed to update this brand resource');
     }
-    await this.s3Service.deleteFile({Key:brand.image})
-    brand.image = image
+    await this.s3Service.deleteFile({ Key: brand.image });
+    brand.image = image;
     return brand;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} brand`;
+  async restore(
+    brandId: Types.ObjectId,
+    user: UserDocument,
+  ): Promise<BrandDocument | Lean<BrandDocument>> {
+    const brand = await this.brandRepository.findOneAndUpdate({
+      filter: { _id: brandId , paranoId: false , freezedAt: { $exists: true } },
+      update: {
+        restoredAt: new Date(),
+        $unset: { freezedAt: false },
+        updatedBy: user._id,
+      },
+      // return the updated document
+      options: { new: true },
+    });
+
+    if (!brand) {
+      throw new BadRequestException('Failed to update this brand resource');
+    }
+
+    return brand;
+  }
+
+   async freeze(
+    brandId: Types.ObjectId,
+    user: UserDocument,
+  ): Promise<BrandDocument | Lean<BrandDocument>> {
+    const brand = await this.brandRepository.findOneAndUpdate({
+      filter: { _id: brandId },
+      update: {
+        freezedAt: new Date(),
+        $unset: { restored: false },
+        updatedBy: user._id,
+      },
+      // return the updated document
+      options: { new: true },
+    });
+
+    if (!brand) {
+      throw new BadRequestException('Failed to update this brand resource');
+    }
+
+    return brand;
+  }
+   async remove(
+    brandId: Types.ObjectId,
+    user: UserDocument,
+  ): Promise<string> {
+    const brand = await this.brandRepository.findOneAndDelete({
+      filter: { _id: brandId , paranoId: false , freezedAt: { $exists: true } },
+    });
+
+    if (!brand) {
+      throw new NotFoundException('Failed to REMOVE this brand');
+    }
+await this.s3Service.deleteFile({ Key: brand.image });
+    return 'Done';
   }
 }

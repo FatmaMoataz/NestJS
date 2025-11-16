@@ -49,16 +49,6 @@ export class BrandController {
     return successResponse({ status: 201, data: { brand } });
   }
 
-  @Get()
-  findAll() {
-    return this.brandService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.brandService.findOne(+id);
-  }
-
   @Auth(endpoint.create)
   @Patch(':brandId')
   async update(
@@ -74,10 +64,12 @@ export class BrandController {
     return successResponse<BrandResponse>({ data: { brand } });
   }
 
-  @UseInterceptors(FileInterceptor(
-    'attachment',
-    cloudFileUpload({ validation: fileValidation.image }),
-    ))
+  @UseInterceptors(
+    FileInterceptor(
+      'attachment',
+      cloudFileUpload({ validation: fileValidation.image }),
+    ),
+  )
   @Auth(endpoint.create)
   @Patch(':brandId/attachment')
   async updateAttachment(
@@ -93,8 +85,44 @@ export class BrandController {
     return successResponse<BrandResponse>({ data: { brand } });
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.brandService.remove(+id);
+  @Auth(endpoint.create)
+  @Patch(':brandId/restore')
+  async restore(
+    @Param() params: BrandParamsDto,
+    @User() user: UserDocument,
+  ): Promise<IResponse<BrandResponse>> {
+    const brand = await this.brandService.freeze(params.brandId, user);
+    return successResponse<BrandResponse>({ data: { brand } });
+  }
+
+  @Auth(endpoint.create)
+  @Delete(':brandId/freeze')
+  async freeze(
+    @Param() params: BrandParamsDto,
+    @User() user: UserDocument,
+  ): Promise<IResponse<BrandResponse>> {
+    await this.brandService.freeze(params.brandId, user);
+    return successResponse<BrandResponse>({
+      message: 'Brand freezed successfully',
+    });
+  }
+  
+  @Auth(endpoint.create)
+  @Delete(':brandId')
+  async remove(@Param() params: BrandParamsDto , @User() user: UserDocument) {
+    await this.brandService.remove(params.brandId , user);
+    return successResponse<string>({
+      message: 'Brand removed successfully',
+    });
+  }
+
+  @Get()
+  findAll() {
+    return this.brandService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.brandService.findOne(+id);
   }
 }
