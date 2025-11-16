@@ -11,6 +11,7 @@ import {
   ParseFilePipe,
   UsePipes,
   ValidationPipe,
+  Query,
 } from '@nestjs/common';
 import { BrandService } from './brand.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
@@ -18,9 +19,9 @@ import { BrandRepository, type UserDocument } from 'src/DB';
 import { IResponse, successResponse } from 'src/common';
 import { Auth, User } from 'src/common/decorators';
 import { cloudFileUpload, fileValidation } from 'src/common/utils/multer';
-import { BrandResponse } from './entities/brand.entity';
+import { BrandResponse, GetAllResponse } from './entities/brand.entity';
 import { endpoint } from './authorization.module';
-import { BrandParamsDto, UpdateBrandDto } from './dto/update-brand.dto';
+import { BrandParamsDto, GetAllBrandDto, UpdateBrandDto } from './dto/update-brand.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
@@ -106,7 +107,7 @@ export class BrandController {
       message: 'Brand freezed successfully',
     });
   }
-  
+
   @Auth(endpoint.create)
   @Delete(':brandId')
   async remove(@Param() params: BrandParamsDto , @User() user: UserDocument) {
@@ -117,8 +118,9 @@ export class BrandController {
   }
 
   @Get()
-  findAll() {
-    return this.brandService.findAll();
+  async findAll(@Query() query: GetAllBrandDto):Promise<IResponse<GetAllResponse>> {
+    const result = await this.brandService.findAll(query);
+    return successResponse<GetAllResponse>({ data: {result} });
   }
 
   @Get(':id')

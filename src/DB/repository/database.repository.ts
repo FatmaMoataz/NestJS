@@ -164,7 +164,13 @@ export abstract class DatabaseRepository<TDocument> {
     options?: QueryOptions<TDocument> | undefined;
     page?: number | 'all';
     size?: number;
-  }): Promise<Lean<TDocument>[] | TDocument[] | [] | any> {
+  }): Promise<{
+      docsCount?:number,
+      limit?: number,
+      pages?: number,
+      currentPage?: number | undefined,
+      result: Document[] | Lean<TDocument>[],
+  }> {
     let docsCount: number | undefined = undefined;
     let pages: number | undefined = undefined;
     if (page !== 'all') {
@@ -179,8 +185,8 @@ export abstract class DatabaseRepository<TDocument> {
       docsCount,
       limit: options.limit,
       pages,
-      result,
       currentPage: page !== 'all' ? page : undefined,
+      result:[],
     };
   }
 }
