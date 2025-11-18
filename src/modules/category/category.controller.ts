@@ -55,12 +55,12 @@ export class CategoryController {
   @Patch(':categoryId')
   async update(
     @Param() params: CategoryParamsDto,
-    @Body() updateBrandDto: UpdateCategoryDto,
+    @Body() updateCategoryDto: UpdateCategoryDto,
     @User() user: UserDocument,
   ): Promise<IResponse<CategoryResponse>> {
     const category = await this.categoryService.update(
       params.categoryId,
-      updateBrandDto,
+      updateCategoryDto,
       user,
     );
     return successResponse<CategoryResponse>({ data: { category } });
