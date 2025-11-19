@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { BrandDocument, BrandRepository, Lean, UserDocument } from 'src/DB';
-import { FolderEnum, S3Service, successResponse } from 'src/common';
-import { GetAllBrandDto, UpdateBrandDto } from './dto/update-brand.dto';
+import { FolderEnum, GetAllDto, S3Service } from 'src/common';
+import { UpdateBrandDto } from './dto/update-brand.dto';
 import { Types } from 'mongoose';
 
 @Injectable()
@@ -42,7 +42,7 @@ export class BrandService {
     return brand;
   }
 
-  async findAll(data:GetAllBrandDto , archive: boolean = false):Promise<{
+  async findAll(data:GetAllDto , archive: boolean = false):Promise<{
       docsCount?:number,
       limit?: number,
       pages?: number,

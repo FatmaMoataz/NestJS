@@ -11,9 +11,8 @@ import {
   Lean,
   UserDocument,
 } from 'src/DB';
-import { FolderEnum, S3Service } from 'src/common';
+import { FolderEnum, GetAllDto, S3Service } from 'src/common';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { GetAllCategoryDto } from './dto/update-category.dto';
 import { Types } from 'mongoose';
 
 @Injectable()
@@ -50,7 +49,7 @@ export class CategoryService {
   }
 
   async findAll(
-    data: GetAllCategoryDto,
+    data: GetAllDto,
     archive: boolean = false,
   ): Promise<{
     docsCount?: number;

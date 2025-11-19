@@ -15,7 +15,6 @@ import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import {
   CategoryParamsDto,
-  GetAllCategoryDto,
   UpdateCategoryDto,
 } from './dto/update-category.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -23,8 +22,8 @@ import { cloudFileUpload, fileValidation } from 'src/common/utils/multer';
 import { Auth, User } from 'src/common/decorators';
 import { endpoint } from '../category/authorization.module';
 import { type UserDocument } from 'src/DB';
-import { IResponse, successResponse } from 'src/common';
-import { CategoryResponse, GetAllResponse } from './entities/category.entity';
+import { GetAllDto, GetAllResponse, ICategory, IResponse, successResponse } from 'src/common';
+import { CategoryResponse } from './entities/category.entity';
 
 @Controller('category')
 export class CategoryController {
@@ -120,19 +119,19 @@ export class CategoryController {
 
   @Get()
   async findAll(
-    @Query() query: GetAllCategoryDto,
-  ): Promise<IResponse<GetAllResponse>> {
+    @Query() query: GetAllDto,
+  ): Promise<IResponse<GetAllResponse<ICategory>>> {
     const result = await this.categoryService.findAll(query, false);
-    return successResponse<GetAllResponse>({ data: { result } });
+    return successResponse<GetAllResponse<ICategory>>({ data: { result } });
   }
 
   @Auth(endpoint.create)
   @Get('/archive')
   async findAllArchive(
-    @Query() query: GetAllCategoryDto,
-  ): Promise<IResponse<GetAllResponse>> {
+    @Query() query: GetAllDto,
+  ): Promise<IResponse<GetAllResponse<ICategory>>> {
     const result = await this.categoryService.findAll(query, true);
-    return successResponse<GetAllResponse>({ data: { result } });
+    return successResponse<GetAllResponse<ICategory>>({ data: { result } });
   }
 
   @Get(':categoryId')

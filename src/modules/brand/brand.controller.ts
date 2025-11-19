@@ -16,12 +16,12 @@ import {
 import { BrandService } from './brand.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { type UserDocument } from 'src/DB';
-import { IResponse, successResponse } from 'src/common';
+import { GetAllDto, GetAllResponse, IBrand, IResponse, successResponse } from 'src/common';
 import { Auth, User } from 'src/common/decorators';
 import { cloudFileUpload, fileValidation } from 'src/common/utils/multer';
-import { BrandResponse, GetAllResponse } from './entities/brand.entity';
+import { BrandResponse } from './entities/brand.entity';
 import { endpoint } from './authorization.module';
-import { BrandParamsDto, GetAllBrandDto, UpdateBrandDto } from './dto/update-brand.dto';
+import { BrandParamsDto, UpdateBrandDto } from './dto/update-brand.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
@@ -117,16 +117,16 @@ export class BrandController {
   }
 
   @Get()
-  async findAll(@Query() query: GetAllBrandDto):Promise<IResponse<GetAllResponse>> {
+  async findAll(@Query() query: GetAllDto):Promise<IResponse<GetAllResponse<IBrand>>> {
     const result = await this.brandService.findAll(query);
-    return successResponse<GetAllResponse>({ data: {result} });
+    return successResponse<GetAllResponse<IBrand>>({ data: {result} });
   }
 
   @Auth(endpoint.create)
   @Get('/archive')
-  async findAllArchive(@Query() query: GetAllBrandDto):Promise<IResponse<GetAllResponse>> {
+  async findAllArchive(@Query() query: GetAllDto):Promise<IResponse<GetAllResponse<IBrand>>> {
     const result = await this.brandService.findAll(query , true);
-    return successResponse<GetAllResponse>({ data: {result} });
+    return successResponse<GetAllResponse<IBrand>>({ data: {result} });
   }
 
   @Get(':brandId')
