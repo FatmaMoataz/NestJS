@@ -8,11 +8,12 @@ import {
   BrandRepository,
   CategoryDocument,
   CategoryRepository,
+  Lean,
   ProductDocument,
   UserDocument,
 } from 'src/DB';
 import { ProductRepository } from 'src/DB/repository/product.repository';
-import { FolderEnum, S3Service } from 'src/common';
+import { FolderEnum, GetAllDto, S3Service } from 'src/common';
 import { randomUUID } from 'crypto';
 import {
   UpdateProductAttachmentDto,
@@ -179,15 +180,104 @@ export class ProductService {
     return updatedProduct as ProductDocument;
   }
 
-  findAll() {
-    return `This action returns all product`;
+  async findAll(
+    data: GetAllDto,
+    archive: boolean = false,
+  ): Promise<{
+    docsCount?: number;
+    limit?: number;
+    pages?: number;
+    currentPage?: number | undefined;
+    result: ProductDocument[] | Lean<ProductDocument>[];
+  }> {
+    const { page, size, search } = data;
+    const result = await this.productRepository.paginate({
+      filter: {
+        ...(search
+          ? {
+              $or: [
+                { name: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+              ],
+            }
+          : {}),
+        ...(archive ? { paranoId: false, freezedAt: { $exists: true } } : {}),
+      },
+      page,
+      size,
+    });
+    return result[0];
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+  async findOne(
+    productId: Types.ObjectId,
+    archive: boolean = false,
+  ): Promise<ProductDocument | Lean<ProductDocument>> {
+    const product = await this.productRepository.findOne({
+      filter: {
+        _id: productId,
+        ...(archive ? { paranoId: false, freezedAt: { $exists: true } } : {}),
+      },
+    });
+    if (!product) {
+      throw new NotFoundException('product not found');
+    }
+    return product;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
-  }
+  
+    async freeze(
+      productId: Types.ObjectId,
+      user: UserDocument,
+    ): Promise<ProductDocument | Lean<ProductDocument>> {
+      const product = await this.productRepository.findOneAndUpdate({
+        filter: { _id: productId },
+        update: {
+          freezedAt: new Date(),
+          $unset: { restored: false },
+          updatedBy: user._id,
+        },
+        options: { new: true },
+      });
+  
+      if (!product) {
+        throw new BadRequestException('Failed to update this product resource');
+      }
+  
+      return product;
+    }
+  
+    async remove(id: Types.ObjectId): Promise<string> {
+      const product = await this.productRepository.findOneAndDelete({
+        filter: { _id: id, paranoId: false, freezedAt: { $exists: true } },
+      });
+  
+      if (!product) {
+        throw new NotFoundException('Failed to REMOVE this product');
+      }
+      await this.s3Service.deleteFiles({ urls: product.images });
+      return 'Done';
+    }
+  
+      async restore(
+        productId: Types.ObjectId,
+        user: UserDocument,
+      ): Promise<ProductDocument | Lean<ProductDocument>> {
+        const product = await this.productRepository.findOneAndUpdate({
+          filter: { _id: productId , paranoId: false , freezedAt: { $exists: true } },
+          update: {
+            restoredAt: new Date(),
+            $unset: { freezedAt: false },
+            updatedBy: user._id,
+          },
+          // return the updated document
+          options: { new: true },
+        });
+    
+        if (!product) {
+          throw new BadRequestException('Failed to update this brand resource');
+        }
+    
+        return product;
+      }
 }

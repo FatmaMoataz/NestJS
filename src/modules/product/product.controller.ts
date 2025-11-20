@@ -11,6 +11,7 @@ import {
   UsePipes,
   ValidationPipe,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -24,7 +25,7 @@ import { cloudFileUpload, fileValidation } from 'src/common/utils/multer';
 import { Auth, User } from 'src/common/decorators';
 import { endPoint } from './authorization';
 import { Product, type UserDocument } from 'src/DB';
-import { IResponse, successResponse } from 'src/common';
+import { GetAllDto, GetAllResponse, IProduct, IResponse, successResponse } from 'src/common';
 
 @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
 @Controller('product')
@@ -94,18 +95,70 @@ export class ProductController {
     return successResponse({ status: 200, data: { product } });
   }
 
+  @Auth(endPoint.create)
+  @Patch(':productId/restore')
+  async restore(
+    @Param() params: ProductParamsDto,
+    @User() user: UserDocument,
+  ): Promise<IResponse> {
+    const product = await this.productService.freeze(params.productId, user);
+    return successResponse({ data: { product } });
+  }
+
+  @Auth(endPoint.create)
+  @Delete(':productId/freeze')
+  async freeze(
+    @Param() params: ProductParamsDto,
+    @User() user: UserDocument,
+  ): Promise<IResponse> {
+    await this.productService.freeze(params.productId, user);
+    return successResponse({
+      message: 'Product freezed successfully',
+    });
+  }
+
+  @Auth(endPoint.create)
+  @Delete(':productId')
+  async remove(@Param() params: ProductParamsDto, @User() user: UserDocument) {
+    await this.productService.remove(params.productId);
+    return successResponse<string>({
+      message: 'product removed successfully',
+    });
+  }
+
   @Get()
-  findAll() {
-    return this.productService.findAll();
+  async findAll(
+    @Query() query: GetAllDto,
+  ): Promise<IResponse<GetAllResponse<IProduct>>> {
+    const result = await this.productService.findAll(query, false);
+    return successResponse<GetAllResponse<IProduct>>({ data: { result } });
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.productService.findOne(+id);
+  @Auth(endPoint.create)
+  @Get('/archive')
+  async findAllArchive(
+    @Query() query: GetAllDto,
+  ): Promise<IResponse<GetAllResponse<IProduct>>> {
+    const result = await this.productService.findAll(query, true);
+    return successResponse<GetAllResponse<IProduct>>({ data: { result } });
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productService.remove(+id);
+  @Get(':productId')
+  async findOne(@Param() params: ProductParamsDto) {
+    const product = await this.productService.findOne(
+      params.productId,
+      false,
+    );
+    return successResponse({ data: { product } });
+  }
+
+  @Auth(endPoint.create)
+  @Get(':productId/archive')
+  async findOneArchive(@Param() params: ProductParamsDto) {
+    const product = await this.productService.findOne(
+      params.productId,
+      true,
+    );
+    return successResponse({ data: { product } });
   }
 }

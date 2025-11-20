@@ -171,4 +171,26 @@ export class CategoryService {
     await this.s3Service.deleteFile({ Key: category.image });
     return 'Done';
   }
+
+    async restore(
+      categoryId: Types.ObjectId,
+      user: UserDocument,
+    ): Promise<CategoryDocument | Lean<CategoryDocument>> {
+      const category = await this.categoryRepository.findOneAndUpdate({
+        filter: { _id: categoryId , paranoId: false , freezedAt: { $exists: true } },
+        update: {
+          restoredAt: new Date(),
+          $unset: { freezedAt: false },
+          updatedBy: user._id,
+        },
+        // return the updated document
+        options: { new: true },
+      });
+  
+      if (!category) {
+        throw new BadRequestException('Failed to restore this category resource');
+      }
+  
+      return category;
+    }
 }
