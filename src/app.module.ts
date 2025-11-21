@@ -11,6 +11,7 @@ import { AppService } from './app.service';
 import { SharedAuthModule } from './common/modules/auth.module';
 import { S3Service } from './common';
 import { BrandModule } from './modules/brand/brand.module';
+import { CartModule } from './modules/cart/cart.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { BrandModule } from './modules/brand/brand.module';
     CategoryModule,
     ProductModule,
     BrandModule,
+    CartModule
   ],
   controllers: [AppController],
   providers: [AppService , S3Service],
