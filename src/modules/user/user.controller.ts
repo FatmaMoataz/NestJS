@@ -1,7 +1,7 @@
 import {
   Controller,
   Get,
-  Headers,
+  // Headers,
   MaxFileSizeValidator,
   ParseFilePipe,
   Patch,
@@ -10,12 +10,12 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { type IMulterFile, IResponse, IUser, RoleEnum, successResponse, TokenEnum } from 'src/common';
+import { type IMulterFile, IResponse, RoleEnum, successResponse, TokenEnum } from 'src/common';
 import type { UserDocument } from 'src/DB';
 import { Auth } from 'src/common/decorators/auth.decorator';
 import { User } from 'src/common/decorators';
-import { PreferredLanguageInterceptor } from 'src/common/interceptors';
-import { delay, Observable, of } from 'rxjs';
+// import { PreferredLanguageInterceptor } from 'src/common/interceptors';
+// import { delay, Observable, of } from 'rxjs';
 import { FileFieldsInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { cloudFileUpload, fileValidation, localFileUpload } from 'src/common/utils/multer';
 import { ProfileResponse } from '../auth/entities/user.entity';
@@ -24,17 +24,21 @@ import { ProfileResponse } from '../auth/entities/user.entity';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @UseInterceptors(PreferredLanguageInterceptor)
-  @Auth([RoleEnum.admin, RoleEnum.user], TokenEnum.access)
-  @Get()
-  profile(@Headers() header: any, @User() user: UserDocument): Observable<any> {
-    return of([{ message: 'Done' }]).pipe(delay(15000));
-  }
-
+ 
+ @Auth([RoleEnum.admin, RoleEnum.user, RoleEnum.superAdmin])
+ @Get()
+ async profile(@User() user: UserDocument):Promise<IResponse<ProfileResponse>> {
+  const profile = await this.userService.profile(user);
+// await user.populate([{path:'wishlist'}]);
+    return successResponse<ProfileResponse>({data:{profile}});
+ }
+ 
+ 
+  // @UseInterceptors(PreferredLanguageInterceptor)
+  // @Auth([RoleEnum.admin, RoleEnum.user], TokenEnum.access)
   // @Get()
-  // allUsers(): { message: string; data: { users: IUser[] } } {
-  //   const users: IUser[] = this.UserService.allUsers();
-  //   return { message: 'done', data: { users } };
+  // profile(@Headers() header: any, @User() user: UserDocument): Observable<any> {
+  //   return of([{ message: 'Done' }]).pipe(delay(15000));
   // }
 
   @UseInterceptors(

@@ -29,7 +29,7 @@ export class Category implements ICategory {
   restoredAt?: Date;
 @Prop({ type: Date })
   freezedAt?: Date;
-  @Prop([{ type: Types.ObjectId, ref: 'Brand' }])
+  @Prop({type:[{ type: Types.ObjectId, ref: 'Brand' }]})
   brands?: Types.ObjectId[];
 }
 

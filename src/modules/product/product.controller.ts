@@ -24,8 +24,8 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { cloudFileUpload, fileValidation } from 'src/common/utils/multer';
 import { Auth, User } from 'src/common/decorators';
 import { endPoint } from './authorization';
-import { Product, type UserDocument } from 'src/DB';
-import { GetAllDto, GetAllResponse, IProduct, IResponse, successResponse } from 'src/common';
+import { type UserDocument } from 'src/DB';
+import { GetAllDto, GetAllResponse, IProduct, IResponse, RoleEnum, successResponse } from 'src/common';
 
 @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
 @Controller('product')
@@ -161,4 +161,25 @@ export class ProductController {
     );
     return successResponse({ data: { product } });
   }
+
+    @Auth([RoleEnum.user])
+  @Patch(':productId/add-to-wishlist')
+async addToWishlist(
+  @User() user: UserDocument,
+  @Param() params: ProductParamsDto,
+):Promise<IResponse> {
+const product = await this.productService.addToWishlist(params.productId, user);
+return successResponse({ data: { product } });
+}
+
+    @Auth([RoleEnum.user])
+  @Patch(':productId/remove-from-wishlist')
+async removeFromWishlist(
+  @User() user: UserDocument,
+  @Param() params: ProductParamsDto,
+):Promise<IResponse> {
+await this.productService.removeFromWishlist(params.productId, user);
+return successResponse();
+}
+
 }

@@ -5,7 +5,7 @@ import {
   SchemaFactory,
   Virtual,
 } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 import { GenderEnum, generateHash, IUser, LanguageEnum, ProviderEnum, RoleEnum } from 'src/common';
 import { OTPDocument } from './otp.model';
 
@@ -89,6 +89,9 @@ export class User implements IUser{
 
   @Virtual()
   otp: OTPDocument[];
+
+  @Prop({type:[{ type: Types.ObjectId, ref: 'Product' }]})
+  wishlists?: Types.ObjectId[];
 }
 
 const userSchema = SchemaFactory.createForClass(User);

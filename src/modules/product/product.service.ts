@@ -11,6 +11,7 @@ import {
   Lean,
   ProductDocument,
   UserDocument,
+  UserRepository,
 } from 'src/DB';
 import { ProductRepository } from 'src/DB/repository/product.repository';
 import { FolderEnum, GetAllDto, S3Service } from 'src/common';
@@ -27,6 +28,7 @@ export class ProductService {
     private readonly categoryRepository: CategoryRepository,
     private readonly brandRepository: BrandRepository,
     private readonly productRepository: ProductRepository,
+    private readonly userRepository: UserRepository,
     private readonly s3Service: S3Service,
   ) {}
   async create(
@@ -278,5 +280,36 @@ export class ProductService {
     }
 
     return product;
+  }
+
+  async addToWishlist(
+    productId: Types.ObjectId,
+    user: UserDocument,
+  ): Promise<ProductDocument | Lean<ProductDocument>> {
+    const product = await this.productRepository.findOne({
+      filter: {
+        _id: productId,
+      },
+    });
+    if (!product) {
+      throw new NotFoundException('product not found');
+    }
+    await this.userRepository.updateOne({
+      filter: { _id: user._id },
+      update: { $addToSet: { wishlist: product._id } },
+    })
+    return product;
+  }
+
+    async removeFromWishlist(
+    productId: Types.ObjectId,
+    user: UserDocument,
+  ): Promise<string> {
+
+    await this.userRepository.updateOne({
+      filter: { _id: user._id },
+      update: { $pull: { wishlist: Types.ObjectId.createFromHexString(productId as unknown as string) } },
+    })
+    return 'Done';
   }
 }
