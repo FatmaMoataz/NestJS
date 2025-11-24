@@ -10,6 +10,8 @@ export class OrderProduct implements IOrderProduct {
     quantity: number;
     @Prop({type:Number , required:true})
     unitPrice: number;
+    @Prop({type:Number , required:true})
+    finalPrice: number;
 }
 
 @Schema({ timestamps: true, strictQuery: true , toJSON: {virtuals:true} , toObject:{virtuals:true}})
@@ -55,6 +57,13 @@ return this.payment == PaymentEnum.Card ? OrderStatusEnum.Pending : OrderStatusE
 export type OrderDocument = HydratedDocument<Order>;
 export const OrderSchema = SchemaFactory.createForClass(Order);
 OrderSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+OrderSchema.pre("save" , async function(next) {
+if(this.isModified("total")) {
+this.subtotal = this.total - (this.total * this.discount)
+}
+  next()
+})
 
 OrderSchema.pre(['findOneAndUpdate', 'updateOne'], async function (next) {
   const q = this.getQuery();

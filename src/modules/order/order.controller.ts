@@ -5,20 +5,22 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { Auth, User } from 'src/common/decorators';
 import { endpoint } from './authorization';
 import { type UserDocument } from 'src/DB';
-import { successResponse } from 'src/common';
+import { IResponse, successResponse } from 'src/common';
+import { OrderResponse } from './entities/order.entity';
 
 @UsePipes(new ValidationPipe({whitelist:true, forbidNonWhitelisted:true}))
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
- @Auth(endpoint.create)
+  @Auth(endpoint.create)
   @Post()
   async create(
-    @User() user:UserDocument,
-    @Body() createOrderDto: CreateOrderDto) {
-    const order =  this.orderService.create(createOrderDto , user);
-    return successResponse()
+    @User() user: UserDocument,
+    @Body() createOrderDto: CreateOrderDto,
+  ): Promise<IResponse<OrderResponse>> {
+    const order = await this.orderService.create(createOrderDto, user);
+    return successResponse<OrderResponse>({ status: 201, data: { order } });
   }
 
   @Get()

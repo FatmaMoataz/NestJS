@@ -66,7 +66,7 @@ export abstract class DatabaseRepository<TDocument> {
     }
     return await this.model.updateOne(
       filter,
-      { ...update, $inc: { __v: 1 } },
+      {  $inc: { __v: 1 } , ...update },
       options,
     );
   }
