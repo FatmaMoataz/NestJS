@@ -9,6 +9,10 @@ import {
 import { Types } from 'mongoose';
 import { IOrder, PaymentEnum } from 'src/common';
 
+export class OrderParamDto {
+  @IsMongoId()
+  orderId: Types.ObjectId
+}
 export class CreateOrderDto implements Partial<IOrder> {
   @IsMongoId()
   @IsOptional()

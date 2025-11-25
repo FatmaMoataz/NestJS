@@ -4,10 +4,11 @@ import { OrderController } from './order.controller';
 import { ProductRepository } from 'src/DB/repository/product.repository';
 import { CartModel, CartRepository, CouponModel, CouponRepository, OrderModel, OrderRepository, ProductModel } from 'src/DB';
 import { CartService } from '../cart/cart.service';
+import { PaymentService } from 'src/common';
 
 @Module({
   imports:[OrderModel , CartModel , ProductModel , CouponModel],
   controllers: [OrderController],
-  providers: [OrderService , ProductRepository , OrderRepository , CartRepository , CartService , CouponRepository],
+  providers: [OrderService , ProductRepository , OrderRepository , CartRepository , CartService , CouponRepository, PaymentService],
 })
 export class OrderModule {}

@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, ValidationPipe } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { CreateOrderDto } from './dto/create-order.dto';
+import { CreateOrderDto, OrderParamDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { Auth, User } from 'src/common/decorators';
 import { endpoint } from './authorization';
@@ -21,6 +21,16 @@ export class OrderController {
   ): Promise<IResponse<OrderResponse>> {
     const order = await this.orderService.create(createOrderDto, user);
     return successResponse<OrderResponse>({ status: 201, data: { order } });
+  }
+
+    @Auth(endpoint.create)
+    @Post(':orderId')
+    async checkout(
+    @Param() params: OrderParamDto,
+    @User() user: UserDocument,
+  ): Promise<IResponse> {
+    const session = await this.orderService.checkout(params.orderId, user);
+    return successResponse({ status: 201, data: { session } });
   }
 
   @Get()

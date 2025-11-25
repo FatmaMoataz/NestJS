@@ -1,16 +1,17 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
-import { CartRepository, CouponRepository, OrderDocument, OrderProduct, OrderRepository, UserDocument } from 'src/DB';
+import { CartRepository, CouponRepository, OrderDocument, OrderProduct, OrderRepository, ProductDocument, UserDocument } from 'src/DB';
 import { ProductRepository } from 'src/DB/repository/product.repository';
-import { CouponEnum } from 'src/common';
+import { CouponEnum, OrderStatusEnum, PaymentEnum, PaymentService } from 'src/common';
 import { randomUUID } from 'crypto';
-import { CartService } from '../cart/cart.service';
+import { Types } from 'mongoose';
+import Stripe from 'stripe';
 
 @Injectable()
 export class OrderService {
   constructor(
-    private readonly cartService: CartService,
+    private readonly paymentService: PaymentService,
     private readonly orderRepository: OrderRepository,
     private readonly couponRepository: CouponRepository,
     private readonly productRepository: ProductRepository,
@@ -75,6 +76,50 @@ throw new BadRequestException("Fail to create this order")
     }
 //  await this.cartService.remove(user)
     return order;
+  }
+
+  async checkout(orderId: Types.ObjectId, user: UserDocument) {
+const order = await this.orderRepository.findOne({
+  filter: {
+    _id: orderId,
+    createdBy: user._id,
+    payment: PaymentEnum.Card,
+    status: OrderStatusEnum.Pending
+  },
+  options: {
+    populate: [{path: "products.productId" , select: "name"}]
+  }
+})
+if(!order) {
+throw new NotFoundException("Fail to find matching order")
+}
+let discounts:Stripe.Checkout.SessionCreateParams.Discount[]=[]
+if(order.discount) {
+const coupon = await this.paymentService.createCoupon({
+  duration:'once',
+  currency:'egp',
+  percent_off: order.discount * 100
+})
+discounts.push({coupon: coupon.id})
+}
+const session = await this.paymentService.checkoutSession({
+  customer_email : user.email,
+  metadata : { orderId: orderId.toString() },
+  discounts,
+  line_items: order.products.map(product => {
+    return {
+      quantity: product.quantity,
+      price_data: {
+        currency:'egp',
+        product_data: {
+          name: (product.productId as ProductDocument).name
+        },
+        unit_amount: product.unitPrice * 100
+      }
+    }
+  })
+})
+return session
   }
 
   findAll() {
