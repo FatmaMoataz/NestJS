@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, ValidationPipe, Req } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto, OrderParamDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -7,6 +7,7 @@ import { endpoint } from './authorization';
 import { type UserDocument } from 'src/DB';
 import { IResponse, successResponse } from 'src/common';
 import { OrderResponse } from './entities/order.entity';
+import { type Request } from 'express';
 
 @UsePipes(new ValidationPipe({whitelist:true, forbidNonWhitelisted:true}))
 @Controller('order')
@@ -22,6 +23,12 @@ export class OrderController {
     const order = await this.orderService.create(createOrderDto, user);
     return successResponse<OrderResponse>({ status: 201, data: { order } });
   }
+
+// @Post("webhook")
+// async webhook(@Req() req:Request) {
+// await this.orderService.webhook(req)
+// return successResponse()
+// }
 
     @Auth(endpoint.create)
     @Post(':orderId')

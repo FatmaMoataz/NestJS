@@ -7,6 +7,8 @@ import { CouponEnum, OrderStatusEnum, PaymentEnum, PaymentService } from 'src/co
 import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
 import Stripe from 'stripe';
+import { RealtimeGateway } from '../gateway/gateway';
+// import { type Request } from 'express';
 
 @Injectable()
 export class OrderService {
@@ -16,7 +18,13 @@ export class OrderService {
     private readonly couponRepository: CouponRepository,
     private readonly productRepository: ProductRepository,
     private readonly cartRepository: CartRepository,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
+
+// async webhook(req:Request) {
+// await this.paymentService.webhook(req)
+// }
+
   async create(createOrderDto: CreateOrderDto , user:UserDocument):Promise<OrderDocument> {
     const cart = await this.cartRepository.findOne({filter:{createdBy:user._id}})
     if(!cart?.products?.length) {
@@ -63,8 +71,9 @@ throw new BadRequestException("Fail to create this order")
       coupon.usedBy.push(user._id)
       await coupon.save()
     }
+    const stockProducts:{productId:Types.ObjectId , stock:number}[]=[]
     for(const product of cart.products) {
- await this.productRepository.updateOne({
+ const updatedProduct = await this.productRepository.findOneAndUpdate({
   filter:{
     _id:product.productId,
     stock:{$gte: product.quantity}
@@ -72,8 +81,10 @@ throw new BadRequestException("Fail to create this order")
   update: {
     $inc:{__v:1 , stock:-product.quantity}
   }
-})
+}) as ProductDocument
+stockProducts.push({productId:updatedProduct._id , stock:updatedProduct?.stock})
     }
+    this.realtimeGateway.changeProductStock(stockProducts)
 //  await this.cartService.remove(user)
     return order;
   }

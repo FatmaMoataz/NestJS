@@ -24,9 +24,9 @@ const accessRoles: RoleEnum[] = this.reflector.getAllAndOverride<RoleEnum[]>(rol
       // case 'rpc':
       //   const rpcCtx = context.switchToRpc();
       //   break;
-      // case 'ws':
-      //   const wsCtx = context.switchToWs();
-      //   break;
+      case 'ws':
+        role = context.switchToWs().getClient().credentials.user.role;
+        break;
 
       default:
         break;

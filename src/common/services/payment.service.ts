@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { type Request } from "express";
 import Stripe from "stripe";
 
 @Injectable()
@@ -31,5 +32,19 @@ async createCoupon (data:Stripe.CouponCreateParams) {
     const coupon = await this.stripe.coupons.create(data)
     return coupon
 }
+
+// async webhook(req:Request) {
+// const endpointSecret = process.env.STRIPE_HOOK_SECRET as string
+// let event;
+// event = stripe.webhooks.constructEvent(request.body , sig , endpointSecret)
+// switch (event.type) {
+//     case 'checkout.session.completed':
+//         const checkoutSessionCompleted = event.data.object
+//         break;
+//     default:
+//         console.log(`Unhandled event type ${event.type}`);       
+//         break;
+// }
+// }
 
 }
