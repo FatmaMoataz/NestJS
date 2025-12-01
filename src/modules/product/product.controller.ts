@@ -12,6 +12,7 @@ import {
   ValidationPipe,
   Patch,
   Query,
+  Inject,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -22,16 +23,33 @@ import {
 } from './dto/update-product.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { cloudFileUpload, fileValidation } from 'src/common/utils/multer';
-import { Auth, User } from 'src/common/decorators';
+import { Auth, TTL, User } from 'src/common/decorators';
 import { endPoint } from './authorization';
 import { type UserDocument } from 'src/DB';
 import { GetAllDto, GetAllResponse, IProduct, IResponse, RoleEnum, successResponse } from 'src/common';
+import { type RedisClientType } from 'redis';
+import { RedisCacheInterceptor } from 'src/common/interceptors/cache.interceptor';
+import { Observable, of } from 'rxjs';
+// import { CACHE_MANAGER , Cache, CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
 @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
 @Controller('product')
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(
+    @Inject('REDIS_CLIENT') private redisClient:RedisClientType,
+    private readonly productService: ProductService) {}
 
+    @Get("test")
+  async test()
+{
+  let user = JSON.parse(await this.redisClient.get("user") as string);
+  if(!user) {
+    // DB
+    user= { name :"fatma"}
+    await this.redisClient.set("user" , JSON.stringify(user) ,{EX:1000})
+  }
+  return user
+}
   @UseInterceptors(
     FilesInterceptor(
       'attachments',
@@ -126,12 +144,15 @@ export class ProductController {
     });
   }
 
+
+  @TTL(50)
+  @UseInterceptors(RedisCacheInterceptor)
   @Get()
   async findAll(
     @Query() query: GetAllDto,
-  ): Promise<IResponse<GetAllResponse<IProduct>>> {
+  ): Promise<Observable<IResponse<GetAllResponse<IProduct>>>> {
     const result = await this.productService.findAll(query, false);
-    return successResponse<GetAllResponse<IProduct>>({ data: { result } });
+    return of(successResponse<GetAllResponse<IProduct>>({ data: { result } }));
   }
 
   @Auth(endPoint.create)

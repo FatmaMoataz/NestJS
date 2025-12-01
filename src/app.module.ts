@@ -15,6 +15,7 @@ import { CartModule } from './modules/cart/cart.module';
 import { CouponModule } from './modules/coupon/coupon.module';
 import { OrderModule } from './modules/order/order.module';
 import { RealTimeModule } from './modules/gateway/gateway.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -22,6 +23,10 @@ import { RealTimeModule } from './modules/gateway/gateway.module';
       envFilePath: ['config/.env.development', '.env'],
       isGlobal: true,
     }),
+//     CacheModule.register({
+//       ttl:5000,
+// isGlobal: true,
+//     }),
     MongooseModule.forRoot(process.env.DB_URI!, {
       serverSelectionTimeoutMS: 30000,
     }),

@@ -4,6 +4,7 @@ import { AuthController } from './auth.controller';
 import { OTPModel } from 'src/DB/model';
 import { OtpRepository} from 'src/DB';
 import { SecurityService } from 'src/common';
+import { createClient } from 'redis';
 
 @Module({
   imports: [OTPModel],
@@ -11,8 +12,19 @@ import { SecurityService } from 'src/common';
     AuthenticationService,
     SecurityService,
     OtpRepository,
+    {
+      provide:"REDIS_CLIENT",
+      useFactory: async() => {
+        const client = createClient({
+          url:'redis://localhost:6379'
+        })
+        client.on("error" , (err) => console.error('Redis Client Error' , err))
+        await client.connect()
+        return client
+      }
+    }
   ],
   controllers: [AuthController],
-  exports:[]
+  exports:["REDIS_CLIENT"]
 })
 export class AuthModule {}
