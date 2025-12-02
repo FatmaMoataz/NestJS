@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { type Request } from "express";
 import Stripe from "stripe";
 
@@ -33,18 +33,48 @@ async createCoupon (data:Stripe.CouponCreateParams) {
     return coupon
 }
 
-// async webhook(req:Request) {
-// const endpointSecret = process.env.STRIPE_HOOK_SECRET as string
-// let event;
-// event = stripe.webhooks.constructEvent(request.body , sig , endpointSecret)
-// switch (event.type) {
-//     case 'checkout.session.completed':
-//         const checkoutSessionCompleted = event.data.object
-//         break;
-//     default:
-//         console.log(`Unhandled event type ${event.type}`);       
-//         break;
-// }
-// }
+async webhook(req:Request):Promise<Stripe.CheckoutSessionCompletedEvent> {
+
+let event:Stripe.Event = this.stripe.webhooks.constructEvent(req.body , req.headers['stripe-signature'] as string, process.env.STRIPE_HOOK_SECRET as string)
+
+if(event.type != 'checkout.session.completed') {
+throw new BadRequestException("Fail to pay")
+}
+
+return event
+}
+
+async createPaymentMethod(data:Stripe.PaymentMethodCreateParams):Promise<Stripe.Response<Stripe.PaymentMethod>> {
+    const paymentMethod = await this.stripe.paymentMethods.create(data)
+    return paymentMethod
+}
+
+async createPaymentIntent(data:Stripe.PaymentIntentCreateParams):Promise<Stripe.Response<Stripe.PaymentIntent>> {
+    const paymentIntent = await this.stripe.paymentIntents.create(data)
+    return paymentIntent
+}
+
+async retrievePaymentIntent(id:string):Promise<Stripe.Response<Stripe.PaymentIntent>> {
+    const intent = await this.stripe.paymentIntents.retrieve(id)
+    return intent
+}
+
+async confirmPaymentIntent(id:string):Promise<Stripe.Response<Stripe.PaymentIntent>> {
+    const intent = await this.retrievePaymentIntent(id)
+    if(intent?.status != 'requires_confirmation') {
+        throw new BadRequestException("Fail to find matching payment intent")
+    }
+    const confirm = await this.stripe.paymentIntents.confirm(id)
+    return confirm
+}
+
+async refund(id:string):Promise<Stripe.Response<Stripe.Refund>> {
+    const intent = await this.retrievePaymentIntent(id)
+    if(intent?.status != 'succeeded') {
+        throw new BadRequestException("Fail to find matching payment intent")
+    }
+    const refund = await this.stripe.refunds.create({payment_intent:intent.id})
+    return refund
+}
 
 }

@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { GqlExecutionContext } from '@nestjs/graphql';
 import { tokenName } from 'src/common/decorators';
 import { TokenEnum } from 'src/common/enums';
 import { TokenService } from 'src/common/services/token.service';
@@ -19,15 +20,16 @@ const tokenType: TokenEnum = this.reflector.getAllAndOverride<TokenEnum>(tokenNa
 
     let req:any;
     let authorization: string = ""
-    switch (context.getType()) {
+    switch (context.getType<string>()) {
       case 'http':
         const httpCtx = context.switchToHttp();
         req = httpCtx.getRequest();
         authorization = req.headers.authorization
         break;
-      // case 'rpc':
-      //   const rpcCtx = context.switchToRpc();
-      //   break;
+      case 'graphql':
+        req = GqlExecutionContext.create(context).getContext().req
+        authorization = req.headers.authorization
+        break;
       case 'ws':
         const wsCtx = context.switchToWs();
         req = wsCtx.getClient()

@@ -5,9 +5,9 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { Auth, User } from 'src/common/decorators';
 import { endpoint } from './authorization';
 import { type UserDocument } from 'src/DB';
-import { IResponse, successResponse } from 'src/common';
+import { IResponse, RoleEnum, successResponse } from 'src/common';
 import { OrderResponse } from './entities/order.entity';
-import { type Request } from 'express';
+import type{ Request } from 'express';
 
 @UsePipes(new ValidationPipe({whitelist:true, forbidNonWhitelisted:true}))
 @Controller('order')
@@ -24,11 +24,21 @@ export class OrderController {
     return successResponse<OrderResponse>({ status: 201, data: { order } });
   }
 
-// @Post("webhook")
-// async webhook(@Req() req:Request) {
-// await this.orderService.webhook(req)
-// return successResponse()
-// }
+  @Auth([RoleEnum.admin , RoleEnum.superAdmin])
+  @Patch(":orderId")
+  async cancel(
+    @User() user: UserDocument,
+    @Param() params: OrderParamDto,
+  ): Promise<IResponse<OrderResponse>> {
+    const order = await this.orderService.cancel(params.orderId , user);
+    return successResponse<OrderResponse>({ data: { order } });
+  }
+
+@Post("webhook")
+async webhook(@Req() req:Request) {
+await this.orderService.webhook(req)
+return successResponse()
+}
 
     @Auth(endpoint.create)
     @Post(':orderId')

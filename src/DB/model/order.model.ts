@@ -52,6 +52,8 @@ return this.payment == PaymentEnum.Card ? OrderStatusEnum.Pending : OrderStatusE
   updatedBy: Types.ObjectId | IUser;
   @Prop({ type: Date })
   restoredAt?: Date;
+  @Prop({type:String})
+  intentId?: string;
 }
 
 export type OrderDocument = HydratedDocument<Order>;

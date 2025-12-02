@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { GqlExecutionContext } from '@nestjs/graphql';
 import { roleName } from 'src/common/decorators/role.decorator';
 import { RoleEnum } from 'src/common/enums';
 
@@ -17,13 +18,13 @@ const accessRoles: RoleEnum[] = this.reflector.getAllAndOverride<RoleEnum[]>(rol
 ]) ?? []
 
    let role:RoleEnum = RoleEnum.user
-    switch (context.getType()) {
+    switch (context.getType<string>()) {
       case 'http':
     role = context.switchToHttp().getRequest().credentials.user.role
         break;
-      // case 'rpc':
-      //   const rpcCtx = context.switchToRpc();
-      //   break;
+      case 'graphql':
+       role = GqlExecutionContext.create(context).getContext().credentials.user.role;
+        break;
       case 'ws':
         role = context.switchToWs().getClient().credentials.user.role;
         break;

@@ -36,4 +36,5 @@ paymentIntent?:string;
   updatedAt?: Date;
   restoredAt?: Date;
   freezedAt?: Date;
+  intentId?:string;
 }

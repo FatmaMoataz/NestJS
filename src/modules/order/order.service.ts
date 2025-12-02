@@ -8,7 +8,7 @@ import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
 import Stripe from 'stripe';
 import { RealtimeGateway } from '../gateway/gateway';
-// import { type Request } from 'express';
+import type{ Request } from 'express';
 
 @Injectable()
 export class OrderService {
@@ -21,9 +21,26 @@ export class OrderService {
     private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
-// async webhook(req:Request) {
-// await this.paymentService.webhook(req)
-// }
+async webhook(req:Request) {
+const event = await this.paymentService.webhook(req)
+const {orderId} = event.data.object.metadata as {orderId:string}
+const order = await this.orderRepository.findOneAndUpdate({
+  filter:{
+    _id:Types.ObjectId.createFromHexString(orderId),
+    status:OrderStatusEnum.Pending,
+    payment:PaymentEnum.Card
+  },
+  update:{
+    paidAt:new Date(),
+    status:OrderStatusEnum.Placed
+  }
+})
+if(!order) {
+  throw new NotFoundException("Fail to find matching order")
+}
+await this.paymentService.confirmPaymentIntent(order.intentId as string)
+return ""
+}
 
   async create(createOrderDto: CreateOrderDto , user:UserDocument):Promise<OrderDocument> {
     const cart = await this.cartRepository.findOne({filter:{createdBy:user._id}})
@@ -89,6 +106,47 @@ stockProducts.push({productId:updatedProduct._id , stock:updatedProduct?.stock})
     return order;
   }
 
+    async cancel(orderId: Types.ObjectId , user:UserDocument):Promise<OrderDocument> {
+const order = await this.orderRepository.findOneAndUpdate({
+  filter:{
+    _id:orderId,
+    status:{$lt:OrderStatusEnum.Cancel}
+  },
+  update:{
+    status:OrderStatusEnum.Cancel,
+    updatedBy:user._id
+  }
+})
+if(!order) {
+  throw new NotFoundException("Fail to find matching order")
+}
+
+    for(const product of order.products) {
+ const updatedProduct = await this.productRepository.findOneAndUpdate({
+  filter:{
+    _id:product.productId,
+    stock:{$gte: product.quantity}
+  },
+  update: {
+    $inc:{__v:1 , stock:-product.quantity}
+  }
+})
+    }
+    if(order.coupon) {
+await this.couponRepository.updateOne({
+  filter:{_id:order.coupon},
+  update:{
+    $pull:{usedBy:order.createdBy}
+  }
+})
+    }
+    if(order.payment == PaymentEnum.Card) {
+// refund
+await this.paymentService.refund(order.intentId as string)
+    }
+    return order as OrderDocument;
+  }
+
   async checkout(orderId: Types.ObjectId, user: UserDocument) {
 const order = await this.orderRepository.findOne({
   filter: {
@@ -130,7 +188,25 @@ const session = await this.paymentService.checkoutSession({
     }
   })
 })
-return session
+
+const method = await this.paymentService.createPaymentMethod({
+  type:"card",
+  card: {
+    token:"pm_card_visa"
+  }
+})
+const intent = await this.paymentService.createPaymentIntent({
+  amount: order.total * 100,
+  currency: 'egp',
+  payment_method:method.id,
+  automatic_payment_methods: {
+    enabled: true,
+    allow_redirects: "never"
+  }
+})
+order.intentId = intent.id
+await order.save()
+return session.url as string
   }
 
   async findAll(
