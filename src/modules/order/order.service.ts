@@ -1,9 +1,9 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
-import { CartRepository, CouponRepository, OrderDocument, OrderProduct, OrderRepository, ProductDocument, UserDocument } from 'src/DB';
+import { CartRepository, CouponRepository, Lean, OrderDocument, OrderProduct, OrderRepository, ProductDocument, UserDocument } from 'src/DB';
 import { ProductRepository } from 'src/DB/repository/product.repository';
-import { CouponEnum, OrderStatusEnum, PaymentEnum, PaymentService } from 'src/common';
+import { CouponEnum, GetAllGraphDto, OrderStatusEnum, PaymentEnum, PaymentService } from 'src/common';
 import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
 import Stripe from 'stripe';
@@ -133,8 +133,28 @@ const session = await this.paymentService.checkoutSession({
 return session
   }
 
-  findAll() {
-    return `This action returns all order`;
+  async findAll(
+    data: GetAllGraphDto={},
+    archive: boolean = false,
+  ): Promise<{
+    docsCount?: number;
+    limit?: number;
+    pages?: number;
+    currentPage?: number | undefined;
+    result: OrderDocument[] | Lean<OrderDocument>[];
+  }> {
+    const { page, size, search } = data;
+    const result = await this.orderRepository.paginate({
+      filter: {
+        ...(archive ? { paranoId: false, freezedAt: { $exists: true } } : {}),
+      },
+      page,
+      size,
+      options:{
+        populate:[{path:"createdBy"}]
+      }
+    });
+    return result[0];
   }
 
   findOne(id: number) {
