@@ -7,6 +7,7 @@ import { ICategory, IUser } from 'src/common';
 export class Category implements ICategory {
   @Prop({ type: String, required: true })
   image: string;
+
   @Prop({
     type: String,
     required: true,
@@ -15,31 +16,39 @@ export class Category implements ICategory {
     maxlength: 25,
   })
   name: string;
+
   @Prop({ type: String, minlength: 2, maxlength: 50 })
   slug: string;
+
   @Prop({ type: String, minlength: 2, maxlength: 5000 })
   description: string;
-    @Prop({ type: String, required: true })
+
+  @Prop({ type: String, required: true })
   assetFolderId: string;
+
   @Prop({ type: Types.ObjectId, required: true, ref: 'User' })
   createdBy: Types.ObjectId | IUser;
+
   @Prop({ type: Types.ObjectId, ref: 'User' })
   updatedBy: Types.ObjectId | IUser;
+
   @Prop({ type: Date })
   restoredAt?: Date;
-@Prop({ type: Date })
+
+  @Prop({ type: Date })
   freezedAt?: Date;
-  @Prop({type:[{ type: Types.ObjectId, ref: 'Brand' }]})
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Brand' }] })
   brands?: Types.ObjectId[];
 }
 
 export type CategoryDocument = HydratedDocument<Category>;
 export const categorySchema = SchemaFactory.createForClass(Category);
+
 categorySchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 categorySchema.pre('save', async function (next) {
   if (this.isModified('name')) {
-    // use name to generate slug
     this.slug = slugify(this.name);
   }
   next();
@@ -64,13 +73,49 @@ categorySchema.pre(['findOneAndUpdate', 'updateOne'], async function (next) {
 });
 
 categorySchema.pre(['findOne', 'find'], async function (next) {
-
   const q = this.getQuery();
   if (q.paranoId === false) {
     this.setQuery({ ...q });
   } else {
     this.setQuery({ ...q, freezedAt: { $exists: false } });
   }
+  next();
+});
+
+categorySchema.virtual('products', {
+  ref: 'Product',
+  localField: '_id',
+  foreignField: 'category',
+});
+
+
+categorySchema.virtual('brandsVirtual', {
+  ref: 'Brand',
+  localField: '_id',
+  foreignField: 'category',
+});
+
+
+categorySchema.set('toJSON', { virtuals: true });
+categorySchema.set('toObject', { virtuals: true });
+
+
+categorySchema.pre('findOneAndDelete', async function (next) {
+  const filter = this.getFilter(); // { _id: ... }
+  const categoryId = filter._id;
+
+  if (!categoryId) return next();
+
+  const db = this.model.db;
+  const ProductModel = db.model('Product');
+  const BrandModel = db.model('Brand');
+
+
+  await ProductModel.deleteMany({ category: categoryId });
+
+  
+  await BrandModel.deleteMany({ category: categoryId });
+
   next();
 });
 

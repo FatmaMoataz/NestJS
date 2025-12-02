@@ -7,6 +7,7 @@ import { IBrand, ICategory, IProduct, IUser } from 'src/common';
 export class Product implements IProduct {
   @Prop({ type: [String], required: true })
   images: string[];
+
   @Prop({
     type: String,
     required: true,
@@ -14,41 +15,77 @@ export class Product implements IProduct {
     maxlength: 2000,
   })
   name: string;
+
   @Prop({ type: String, minlength: 2, maxlength: 50 })
   slug: string;
+
   @Prop({ type: String, minlength: 2, maxlength: 50000 })
   description: string;
-   @Prop({ type: Types.ObjectId, required: true, ref: 'Brand' })
+
+  @Prop({ type: Types.ObjectId, required: true, ref: 'Brand' })
   brand: Types.ObjectId | IBrand;
-   @Prop({ type: Types.ObjectId, required: true, ref: 'Category' })
+
+  @Prop({ type: Types.ObjectId, required: true, ref: 'Category' })
   category: Types.ObjectId | ICategory;
+
   @Prop({ type: String, required: true })
   assetFolderId: string;
+
   @Prop({ type: Number, default: 0 })
   discountPercent: number;
-  @Prop({ type: Number,required: true })
+
+  @Prop({ type: Number, required: true })
   originalPrice: number;
-  @Prop({ type: Number,required: true })
+
+  @Prop({ type: Number, required: true })
   salePrice: number;
-  @Prop({ type: Number,required: true })
+
+  @Prop({ type: Number, required: true })
   stock: number;
-  @Prop({ type: Number,required: true })
+
+  @Prop({ type: Number, required: true })
   soldItems: number;
+
   @Prop({ type: Types.ObjectId, required: true, ref: 'User' })
   createdBy: Types.ObjectId | IUser;
+
   @Prop({ type: Types.ObjectId, ref: 'User' })
   updatedBy: Types.ObjectId | IUser;
+
   @Prop({ type: Date })
   restoredAt?: Date;
+
+  //  VARIANTS 
+  @Prop([
+    {
+      sku: { type: String, required: true },
+      options: {
+        type: Map,
+        of: String, 
+      },
+      originalPrice: { type: Number, required: true },
+      discountPercent: { type: Number, default: 0 },
+      salePrice: { type: Number, required: true },
+      stock: { type: Number, required: true },
+    },
+  ])
+  variants?: Array<{
+    sku: string;
+    options?: Map<string, string>;
+    originalPrice: number;
+    discountPercent?: number;
+    salePrice: number;
+    stock: number;
+  }>;
 }
 
 export type ProductDocument = HydratedDocument<Product>;
 export const ProductSchema = SchemaFactory.createForClass(Product);
+
 ProductSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 ProductSchema.pre('save', async function (next) {
   if (this.isModified('name')) {
-    // use name to generate slug
     this.slug = slugify(this.name);
   }
   next();
@@ -73,7 +110,6 @@ ProductSchema.pre(['findOneAndUpdate', 'updateOne'], async function (next) {
 });
 
 ProductSchema.pre(['findOne', 'find'], async function (next) {
-
   const q = this.getQuery();
   if (q.paranoId === false) {
     this.setQuery({ ...q });
